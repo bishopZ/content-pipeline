@@ -9,6 +9,7 @@ export const loadBrandRules = () => {
     required_logo: boolean;
     brand_colors_hex: string[];
     legal_disclaimer_required: boolean;
+    no_em_dashes: boolean;
     max_headline_chars: number;
     max_body_chars: number;
   };

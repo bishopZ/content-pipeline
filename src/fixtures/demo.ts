@@ -6,7 +6,7 @@ export const demoEnglishCopy: LocaleCopy = {
     {
       slug: 'suncrisp-chili-mango',
       headline: 'Summer heat, mango beat',
-      body: 'Kettle chips with chili kick and sweet mango — snack bold.',
+      body: 'Kettle chips with chili kick and sweet mango. Snack bold.',
     },
     {
       slug: 'purepour-coconut-electrolyte',

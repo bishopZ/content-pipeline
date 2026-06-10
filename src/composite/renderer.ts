@@ -5,6 +5,8 @@ import { ASPECT_DIMENSIONS } from '../types.js';
 import { loadLocalesConfig } from '../utils/prompt.js';
 import { ROOT } from '../utils/paths.js';
 
+const CJK_FONT_PATH = resolve(ROOT, 'assets/fonts/NotoSansCJKsc-Regular.otf');
+
 type CompositeInput = {
   backgroundPath: string;
   productPath: string;
@@ -39,8 +41,17 @@ const textOverlaySvg = (
   const bodyX = rtl ? width - 48 : 48;
   const legalX = rtl ? width - 48 : 48;
 
+  const fontFaceUrl = `file://${CJK_FONT_PATH}`;
   return Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <style>
+      @font-face {
+        font-family: 'Noto Sans CJK SC';
+        src: url('${fontFaceUrl}') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>
     <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="rgba(0,0,0,0)"/>
       <stop offset="55%" stop-color="rgba(0,0,0,0.15)"/>
@@ -48,9 +59,9 @@ const textOverlaySvg = (
     </linearGradient>
   </defs>
   <rect width="${width}" height="${height}" fill="url(#fade)"/>
-  <text x="${headlineX}" y="${height - 220}" fill="#ffffff" font-size="42" font-weight="700" font-family="Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(headline)}</text>
-  <text x="${bodyX}" y="${height - 160}" fill="${accent}" font-size="26" font-family="Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(body)}</text>
-  <text x="${legalX}" y="${height - 48}" fill="#dddddd" font-size="14" font-family="Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(legal)}</text>
+  <text x="${headlineX}" y="${height - 220}" fill="#ffffff" font-size="42" font-weight="700" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(headline)}</text>
+  <text x="${bodyX}" y="${height - 160}" fill="${accent}" font-size="26" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(body)}</text>
+  <text x="${legalX}" y="${height - 48}" fill="#dddddd" font-size="14" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(legal)}</text>
 </svg>`);
 };
 

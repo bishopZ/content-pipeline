@@ -93,7 +93,7 @@ program
   .command('pipeline')
   .option('--auto', 'Skip human-in-the-loop gates', false)
   .option('--dry-run', 'Placeholder backgrounds only', false)
-  .option('--fixture', 'Use offline demo copy/plans (no Anthropic calls)', false)
+  .option('--fixture', 'Use offline demo copy/plans (no OpenRouter calls)', false)
   .option('-b, --brief <path>', 'Campaign brief path', 'inputs/briefs/campaign.json')
   .action(async (opts: { auto?: boolean; dryRun?: boolean; fixture?: boolean; brief: string }) => {
     const auto = Boolean(opts.auto);
@@ -112,15 +112,15 @@ program
           task: () => runIngest(opts.brief),
         },
         {
-          title: fixture ? 'Loading fixture English copy' : 'Writing English ad copy (Claude)',
+          title: fixture ? 'Loading fixture English copy' : 'Writing English ad copy (OpenRouter)',
           task: () => runCopy(auto, fixture),
         },
         {
-          title: fixture ? 'Loading fixture localized copy' : 'Localizing copy (FR, ZH, AR)',
+          title: fixture ? 'Loading fixture localized copy' : 'Localizing copy (OpenRouter)',
           task: () => runLocalize(auto, fixture),
         },
         {
-          title: fixture ? 'Loading fixture background plans' : 'Art-directing background scenes (Claude)',
+          title: fixture ? 'Loading fixture background plans' : 'Art-directing background scenes (OpenRouter)',
           task: () => runPlan(auto, fixture),
         },
         {

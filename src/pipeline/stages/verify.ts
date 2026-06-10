@@ -1,6 +1,7 @@
 import { resolve } from 'path';
-import { reviewBrandVoice } from '../../services/anthropic.js';
+import { reviewBrandVoice } from '../../services/openrouter.js';
 import { requireState, saveState } from '../state.js';
+import { containsEmDash } from '../../utils/copy-text.js';
 import { loadBrandRules } from '../../utils/prompt.js';
 import { fileExists, ROOT } from '../../utils/paths.js';
 import { VerifyIssue } from '../../types.js';
@@ -47,6 +48,22 @@ export const runVerify = async () => {
           message: `Body exceeds ${rules.max_body_chars} chars`,
           context: `${localeCopy.locale}/${product.slug}`,
         });
+      }
+
+      if (rules.no_em_dashes) {
+        for (const [field, value] of [
+          ['headline', product.headline],
+          ['body', product.body],
+        ] as const) {
+          if (containsEmDash(value)) {
+            issues.push({
+              level: 'warning',
+              code: 'EM_DASH',
+              message: `Em dash not allowed in ${field}`,
+              context: `${localeCopy.locale}/${product.slug}`,
+            });
+          }
+        }
       }
 
       const haystack = `${product.headline} ${product.body}`.toLowerCase();

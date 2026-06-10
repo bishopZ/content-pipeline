@@ -142,6 +142,7 @@ Edit `config/brand-rules.json` to match client requirements:
   "required_logo": true,
   "brand_colors_hex": ["#2D6A4F", "#F4A261"],
   "legal_disclaimer_required": true,
+  "no_em_dashes": true,
   "max_headline_chars": 48,
   "max_body_chars": 120
 }

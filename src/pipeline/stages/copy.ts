@@ -1,4 +1,4 @@
-import { generateEnglishCopy } from '../../services/anthropic.js';
+import { generateEnglishCopy } from '../../services/openrouter.js';
 import { demoEnglishCopy } from '../../fixtures/demo.js';
 import { requireState, saveState } from '../state.js';
 import { promptContinue } from '../../utils/gate.js';

@@ -1,4 +1,4 @@
-import { planBackgrounds } from '../../services/anthropic.js';
+import { planBackgrounds } from '../../services/openrouter.js';
 import { demoBackgroundPlans } from '../../fixtures/demo.js';
 import { requireState, saveState } from '../state.js';
 import { promptContinue } from '../../utils/gate.js';

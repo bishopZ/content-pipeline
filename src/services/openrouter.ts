@@ -1,8 +1,18 @@
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { ensureDir } from '../utils/paths.js';
+import { sanitizeProductCopy } from '../utils/copy-text.js';
+import { BackgroundPlan, CampaignBrief, ProductCopy } from '../types.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+type ChatResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+};
 
 type ImageResponse = {
   choices?: Array<{
@@ -22,7 +32,140 @@ const getApiKey = () => {
   return key;
 };
 
+const textModel = () => process.env.OPENROUTER_TEXT_MODEL ?? 'anthropic/claude-sonnet-4';
+
 const imageModel = () => process.env.OPENROUTER_IMAGE_MODEL ?? 'google/gemini-2.5-flash-image';
+
+const openRouterHeaders = () => ({
+  Authorization: `Bearer ${getApiKey()}`,
+  'Content-Type': 'application/json',
+  'HTTP-Referer': 'https://github.com/bishopZ/content-pipeline',
+  'X-Title': 'Harvest Lane Creative Pipeline',
+});
+
+const parseJson = <T>(text: string): T => {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced?.[1]?.trim() ?? text.trim();
+  return JSON.parse(raw) as T;
+};
+
+const completeText = async (prompt: string, maxTokens = 1024): Promise<string> => {
+  const response = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: openRouterHeaders(),
+    body: JSON.stringify({
+      model: textModel(),
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenRouter text request failed (${response.status}): ${errText}`);
+  }
+
+  const data = (await response.json()) as ChatResponse;
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('OpenRouter returned no text content.');
+  }
+
+  return content;
+};
+
+export const generateEnglishCopy = async (brief: CampaignBrief): Promise<ProductCopy[]> => {
+  const text = await completeText(`You are an FMCG social ad copywriter for ${brief.brand.name}.
+
+Campaign message: ${brief.message}
+Audience: ${brief.target_audience}
+Brand tone: ${brief.brand.tone}
+
+Write punchy ad copy for each product. Rules:
+- No emojis
+- No em dashes (use commas or periods instead)
+
+Return JSON only:
+{"products":[{"slug":"...","headline":"max 48 chars","body":"max 120 chars"}]}
+
+Products:
+${brief.products.map((p) => `- ${p.slug}: ${p.name} — ${p.description}`).join('\n')}`);
+
+  const parsed = parseJson<{ products: ProductCopy[] }>(text);
+  return sanitizeProductCopy(parsed.products);
+};
+
+export const localizeCopy = async (
+  brief: CampaignBrief,
+  english: ProductCopy[],
+  locale: string,
+  localeLabel: string,
+): Promise<ProductCopy[]> => {
+  const text = await completeText(`Localize FMCG social ad copy for ${localeLabel} (${locale}) with cultural adaptation.
+Keep slug values unchanged. Adapt idioms for the market; do not literal-translate slogans.
+No emojis. No em dashes (use commas or periods instead).
+
+Campaign: ${brief.campaign_name}
+Region context: ${brief.target_region}
+Audience: ${brief.target_audience}
+
+English copy:
+${JSON.stringify(english, null, 2)}
+
+Return JSON only:
+{"products":[{"slug":"...","headline":"...","body":"..."}]}`);
+
+  const parsed = parseJson<{ products: ProductCopy[] }>(text);
+  return sanitizeProductCopy(parsed.products);
+};
+
+export const planBackgrounds = async (brief: CampaignBrief): Promise<BackgroundPlan[]> => {
+  const text = await completeText(
+    `Art-direct background scenes for social ads. Do NOT mention product names, bottles, chips, drinks, or packaging in prompts — backgrounds only.
+
+Brand: ${brief.brand.name}
+Campaign: ${brief.message}
+Audience: ${brief.target_audience}
+Region: ${brief.target_region}
+Brand colors: ${brief.brand.colors.join(', ')}
+
+For each product slug, return mood, palette, and an image-generation prompt (no product objects in scene).
+
+Return JSON only:
+{"plans":[{"slug":"...","mood":"...","palette":["#hex"],"prompt":"..."}]}
+
+Products (for thematic direction only — do not name them in prompt):
+${brief.products.map((p) => `- ${p.slug}: ${p.description}`).join('\n')}`,
+    1500,
+  );
+
+  const parsed = parseJson<{ plans: BackgroundPlan[] }>(text);
+  return parsed.plans;
+};
+
+export const reviewBrandVoice = async (
+  brief: CampaignBrief,
+  copyByLocale: Array<{ locale: string; products: ProductCopy[] }>,
+): Promise<string[]> => {
+  try {
+    const text = await completeText(
+      `Review ad copy for brand voice alignment with ${brief.brand.name}.
+Tone: ${brief.brand.tone}
+Brand rules: no emojis; no em dashes in headline or body (flag any em dash usage).
+
+Return JSON only: {"warnings":["..."]} — empty array if none.
+
+Copy:
+${JSON.stringify(copyByLocale, null, 2)}`,
+      512,
+    );
+
+    const parsed = parseJson<{ warnings: string[] }>(text);
+    return parsed.warnings ?? [];
+  } catch {
+    return [];
+  }
+};
 
 const extractImageBuffer = async (data: ImageResponse): Promise<Buffer> => {
   const choice = data.choices?.[0]?.message;
@@ -100,12 +243,7 @@ export const generateBackgroundImage = async (
 
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/bishopZ/content-pipeline',
-      'X-Title': 'Harvest Lane Creative Pipeline',
-    },
+    headers: openRouterHeaders(),
     body: JSON.stringify({
       model: imageModel(),
       messages: [

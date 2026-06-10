@@ -16,6 +16,7 @@ Edit `config/brand-rules.json`:
 - `required_logo` — fail if logo file missing
 - `brand_colors_hex` — reference palette
 - `legal_disclaimer_required` — require brief disclaimer
+- `no_em_dashes` — warn when copy contains em dashes (—)
 - `max_headline_chars` / `max_body_chars`
 
 ## Outputs

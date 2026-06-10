@@ -1,4 +1,4 @@
-import { localizeCopy } from '../../services/anthropic.js';
+import { localizeCopy } from '../../services/openrouter.js';
 import { demoLocalizedCopy } from '../../fixtures/demo.js';
 import { requireState, saveState } from '../state.js';
 import { loadLocalesConfig } from '../../utils/prompt.js';

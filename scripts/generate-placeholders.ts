@@ -7,12 +7,11 @@ const ASSETS = join(ROOT, 'inputs', 'assets');
 
 const writePng = async (path: string, width: number, height: number, color: string, label: string) => {
   const svg = Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100%" height="100%" fill="${color}" opacity="0.15"/>
     <rect x="10%" y="15%" width="80%" height="70%" rx="24" fill="${color}"/>
     <text x="50%" y="54%" text-anchor="middle" fill="#ffffff" font-size="28" font-family="Arial">${label}</text>
   </svg>`);
 
-  await sharp(svg).png().toFile(path);
+  await sharp(svg).ensureAlpha().png().toFile(path);
 };
 
 const main = async () => {
