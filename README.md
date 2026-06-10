@@ -2,59 +2,22 @@
 
 Staged creative-automation CLI for the Adobe FDE take-home exercise. Turns one FMCG JSON brief into **localized, multi-ratio social ads** with human-in-the-loop governance, configurable compliance checks, and analytics-ready campaign metadata.
 
-**Thesis:** Surface pain is speed and volume; the root cause is missing **modular content architecture**. This PoC models brief-as-data → copy module → locale variants → swappable backgrounds → deterministic compositing → UTM manifest.
+**2 products × 4 locales × 3 ratios = 24 final PNGs per run.**
 
-## Quick start
+---
+
+## 1. Setup and prerequisites
+
+**Requirements:** Node ≥ 20, npm ≥ 9, macOS or Linux (Sharp requires native binaries).
 
 ```bash
 git clone https://github.com/bishopZ/content-pipeline.git
 cd content-pipeline
 npm install
 cp .env.example .env
-# Add OPENROUTER_API_KEY to .env
-
-npm run placeholders          # create demo product/logo PNGs
-npm run pipeline -- --auto    # full run with live checklist
-npm run demo                  # offline demo (no API keys): fixture copy + dry-run backgrounds
 ```
 
-**Demo video (owner):** Record `npm run pipeline -- --auto` with README visible. Placeholder link: _TBD — Bishop records separately._
-
-## Staged workflow
-
-| Command | Stage | API | Approval gate |
-|---|---|---|---|
-| `npm run ingest` | Validate brief + assets | — | auto |
-| `npm run copy` | English ad copy | OpenRouter | preview headlines |
-| `npm run localize` | FR, ZH, AR copy | OpenRouter | spot-check samples |
-| `npm run plan` | Background art direction | OpenRouter | review prompts |
-| `npm run generate` | Background images | OpenRouter Gemini | — |
-| `npm run composite` | Layer ads (24 files) | Sharp | auto |
-| `npm run verify` | Brand + legal checks | rules + OpenRouter | blocks on errors |
-| `npm run report` | Manifest + HTML | — | auto |
-| `npm run pipeline -- --auto` | All stages | OpenRouter | `--auto` skips prompts |
-
-Use `--dry-run` on `generate` or `pipeline` to create placeholder backgrounds without image API spend:
-
-```bash
-npm run pipeline -- --auto --dry-run
-```
-
-## API setup (step-by-step)
-
-### 1. Create `.env`
-
-```bash
-cp .env.example .env
-```
-
-Never commit `.env`.
-
-### 2. OpenRouter (all LLM calls)
-
-1. Use your existing [OpenRouter](https://openrouter.ai) account
-2. Create an API key
-3. Add to `.env`:
+Edit `.env` and add your OpenRouter key:
 
 ```
 OPENROUTER_API_KEY=sk-or-...
@@ -62,43 +25,136 @@ OPENROUTER_TEXT_MODEL=anthropic/claude-sonnet-4
 OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image
 ```
 
-### 3. Validate before spending
+Generate placeholder input assets (no Photoshop needed):
+
+```bash
+npm run placeholders
+```
+
+---
+
+## 2. Dry-run instructions
+
+Run the full pipeline offline — no API keys required:
+
+```bash
+npm run demo
+```
+
+This runs `pipeline --auto --dry-run --fixture`, which:
+- Loads copy and background plans from fixture data (no OpenRouter calls)
+- Skips image generation and copies placeholder PNGs from `inputs/fixtures/`
+- Composites all 24 final PNGs via Sharp
+- Writes `outputs/campaign-manifest.json` and `outputs/campaign-report.html`
+
+Open `outputs/campaign-report.html` in any browser (no server required) to preview thumbnails and the manifest table.
+
+For a live run with real API keys:
+
+```bash
+npm run pipeline -- --auto
+```
+
+Individual stages can be run in sequence for a code walkthrough:
 
 ```bash
 npm run ingest
-npm run copy -- --auto    # confirms OpenRouter text model
-npm run generate -- --dry-run   # confirms compositing path without image cost
+npm run copy       # pauses for review; use --auto to skip
+npm run localize
+npm run plan
+npm run generate   # add --dry-run to skip image API
+npm run composite
+npm run verify
+npm run report
 ```
 
-**Cost estimate:** ~4 background images + ~10 OpenRouter text calls per full run.
+---
 
-## Input format
+## 3. Brief field descriptions
 
-See `inputs/briefs/campaign.json`. Required fields:
+All campaign configuration lives in `inputs/briefs/campaign.json`. See `inputs/briefs/campaign.example.json` for a copy template.
 
-- `campaign_name`, `campaign_id`, `message`
-- `target_region`, `target_audience`
-- `legal_disclaimer` — rendered verbatim on every asset (not LLM-generated)
-- `utm` — `source`, `medium`, `campaign`
-- `brand` — `name`, `tone`, `logo_path`, `colors`
-- `products` — ≥2 items with `slug`, `name`, `description`, optional `hero_image_path`
-- `aspect_ratios` — `["1:1", "9:16", "16:9"]`
-- `locales` — `["en", "fr", "zh", "ar"]`
+| Field | Type | Description |
+|---|---|---|
+| `campaign_name` | string | Human-readable campaign label (appears in HTML report title) |
+| `campaign_id` | string | Machine-readable ID used in UTM and `creative_id` fields |
+| `message` | string | Core campaign message; given to LLM as brand direction |
+| `target_region` | string | Geographic scope (e.g. `"multi"`, `"US"`) |
+| `target_audience` | string | Audience description used in copy prompts |
+| `legal_disclaimer` | string | Rendered verbatim on every composite — never LLM-generated (ADR-GAI-03) |
+| `utm.source` | string | UTM source tag (e.g. `"meta"`) |
+| `utm.medium` | string | UTM medium tag (e.g. `"paid_social"`) |
+| `utm.campaign` | string | UTM campaign tag — usually matches `campaign_id` |
+| `brand.name` | string | Brand name used in copy prompts |
+| `brand.tone` | string | Tone instruction for LLM copy generation |
+| `brand.logo_path` | string | Relative path to logo PNG (`inputs/assets/logo.png`) |
+| `brand.badge_path` | string | Optional promo badge PNG overlaid top-right |
+| `brand.colors` | string[] | Hex palette used in brand-rules verification |
+| `aspect_ratios` | string[] | Subset of `["1:1", "9:16", "16:9"]` — one composite per ratio per locale per product |
+| `locales` | string[] | Subset of `["en", "fr", "zh", "ar"]` — Stage 3 generates copy for non-EN locales |
+| `products[].slug` | string | URL-safe slug; used in file paths and `creative_id` |
+| `products[].name` | string | Product display name passed to LLM copy prompts |
+| `products[].description` | string | Product description for copy context |
+| `products[].features` | string[] | Feature bullets passed to copy prompts |
+| `products[].hero_image_path` | string | Optional path to product PNG (`inputs/assets/[slug]-product.png`) |
 
-Copy `inputs/briefs/campaign.example.json` as a template.
+---
 
-## Asset preparation
+## 4. Pipeline stage descriptions
 
-Place transparent PNGs in `inputs/assets/`:
+**Stage 1 — ingest (`npm run ingest`)**
+Reads and validates the campaign brief JSON against a Zod schema. Initializes `outputs/.state.json` with the validated brief, blank copy arrays, and an empty manifest. Fails fast with a human-readable error if any required field is missing or malformed. All subsequent stages require a valid state file.
 
-| File | Purpose |
-|---|---|
-| `logo.png` | Brand logo (RGBA) |
-| `badge.png` | Promo bug (optional) |
-| `suncrisp-product.png` | Product cutout |
-| `purepour-product.png` | Product cutout |
+**Stage 2 — copy (`npm run copy`)**
+Calls the OpenRouter text model to generate English ad headlines and body copy for each product. Uses the brief's `message`, `target_audience`, and `brand.tone` as context. When run without `--auto`, prints a preview of each headline and pauses for terminal approval before saving. In fixture mode, loads pre-written EN copy from `src/fixtures/demo.ts`.
 
-Run `npm run placeholders` to generate simple demo assets.
+**Stage 3 — localize (`npm run localize`)**
+Calls the OpenRouter text model once per locale per product (FR, ZH, AR) to produce culturally adapted copy. Prompts include the EN headline as a reference and locale-specific cultural guidance. In fixture mode, loads pre-written locale copy from `src/fixtures/demo.ts`. Pauses for spot-check approval unless `--auto` is set.
+
+**Stage 4 — plan (`npm run plan`)**
+Calls the OpenRouter text model to generate a background art-direction prompt and mood palette for each product. Prompts intentionally omit product names to avoid interfering with generated imagery. Pauses for prompt review unless `--auto` is set.
+
+**Stage 5 — generate (`npm run generate`)**
+Calls the OpenRouter image model (`google/gemini-2.5-flash-image`) with each product's background plan to produce a background PNG per product. In `--dry-run` mode, copies placeholder PNGs from `inputs/fixtures/` without any API call. Saves resulting background paths to state.
+
+**Stage 6 — composite (`npm run composite`)**
+Uses Sharp to produce 24 final PNGs (2 products × 4 locales × 3 ratios). For each combination, layers: resized background, product hero PNG, SVG text overlay (headline + body + legal disclaimer), logo, and optional badge. Text rendering uses Noto Sans CJK SC (bundled OTF, `assets/fonts/`) for ZH locale. Writes all PNGs to `outputs/[product-slug]/[locale]/[ratio]/final.png` and saves the manifest to state.
+
+**Stage 7 — verify (`npm run verify`)**
+Checks all copy against `config/brand-rules.json`: prohibited word scan, legal disclaimer presence, logo file existence, headline/body character limits, and em-dash policy. In non-fixture mode, also calls the OpenRouter text model for a brand-voice review. Reports `error`-level violations (which block advancement) and `warning`-level issues. Edit `config/brand-rules.json` to tune rules without code changes.
+
+**Stage 8 — report (`npm run report`)**
+Writes two output files: `outputs/campaign-manifest.json` (24 rows, one per final PNG, with all UTM and `creative_id` fields) and `outputs/campaign-report.html` (self-contained HTML with base64-embedded 200px-wide thumbnails and a full manifest table). The HTML file opens in any browser without a server.
+
+---
+
+## 5. ADRs index
+
+| ID | Decision | One-line rationale |
+|---|---|---|
+| ADR-GAI-01 | TypeScript over Python | Bishop's portfolio is TypeScript-first; live walkthrough is stronger in the candidate's primary language; Sharp provides production-grade compositing |
+| ADR-GAI-02 | OpenRouter for all LLM calls | Single API key for both text and image generation; unified gateway eliminates per-provider account setup for reviewers |
+| ADR-GAI-03 | Legal disclaimer never LLM-generated | `legal_disclaimer` is rendered verbatim from the brief; LLM paraphrase introduces compliance liability |
+| ADR-GAI-04 | Inter-stage state via `outputs/.state.json` | Enables single-stage restarts without rerunning earlier work; state is inspectable during a live code walkthrough |
+| ADR-GAI-05 | AR locale uses simplified RTL layout | Sharp SVG renderer requires complex bidi handling for full RTL; PoC scope accepts LTR layout for AR with documented limitation |
+| ADR-GAI-06 | Output paths use `1x1/9x16/16x9` and `final.png` | PRD AC-08 specifies `1x1` ratio folders and `final.png` filenames; original scaffold used `1_1` and `campaign.png` |
+| ADR-GAI-07 | Noto Sans CJK SC font bundled in `assets/fonts/` | Sharp SVG renderer (librsvg) requires a `file://` `@font-face` rule in the SVG `<defs>` to render ZH glyphs; system fonts do not include CJK coverage |
+| ADR-GAI-08 | HTML report embeds base64 thumbnails | Self-contained HTML opens without a web server; relative `../outputs/` paths break when the report is moved or shared |
+| ADR-GAI-09 | `creative_id` format: `hl-[slug]-[locale]-[ratio]-[4char]` | Stable, human-readable IDs for analytics joins; 4-char SHA-256 suffix is deterministic per campaign+product+locale+ratio |
+
+---
+
+## 6. Known limitations
+
+- **Arabic RTL layout** — AR locale composites render text left-to-right. Sharp's SVG renderer does not support full bidirectional text. Native Arabic readers will see incorrect layout (ADR-GAI-05).
+- **CJK font bundled as OTF** — `assets/fonts/NotoSansCJKsc-Regular.otf` is committed to the repo (15.6 MB). This keeps setup zero-config but increases clone size. A production build would load the font from a CDN or system path.
+- **No production DAM integration** — `inputs/assets/` is a local folder. S3, Azure Blob, Dropbox, and Workfront integrations are out of PoC scope.
+- **Placeholder API keys produce errors, not silent empty output** — Running `npm run pipeline` without a real `OPENROUTER_API_KEY` throws an HTTP 401 from Stage 2 onward. Use `npm run demo` for zero-key offline runs.
+- **No production test suite** — `tsc --noEmit` enforces type correctness. There are no unit tests for individual stage logic; manual verification steps are in the build log.
+- **PoC pixel fidelity** — Compositing layers are functional but not pixel-perfect ad design. Layouts are not optimized for each ratio's platform-specific safe zone guidelines.
+- **`--seed` flag not implemented** — `creative_id` hashes are deterministic per campaign+product+locale+ratio, but image generation does not pass a seed to the image model; repeated live runs may produce different backgrounds.
+
+---
 
 ## Output layout
 
@@ -108,33 +164,21 @@ outputs/
 │   ├── suncrisp-chili-mango.png
 │   └── purepour-coconut-electrolyte.png
 ├── suncrisp-chili-mango/
-│   ├── en/1_1/campaign.png
-│   ├── en/9_16/campaign.png
-│   ├── fr/...
-│   └── ar/...
-├── purepour-coconut-electrolyte/
+│   ├── en/1x1/final.png       (1080×1080)
+│   ├── en/9x16/final.png      (1080×1920)
+│   ├── en/16x9/final.png      (1920×1080)
+│   ├── fr/  zh/  ar/          (same three ratios each)
 │   └── ...
-├── campaign-manifest.json
-├── campaign-report.html
+├── purepour-coconut-electrolyte/
+│   └── ...  (same structure)
+├── campaign-manifest.json     (24 rows)
+├── campaign-report.html       (self-contained, base64 thumbnails)
 └── .state/pipeline-state.json
 ```
 
-**Volume:** 2 products × 4 locales × 3 ratios = **24 PNG files**
-
-## Trackability (proving ROI)
-
-Each manifest row includes:
-
-- `creative_id` — stable ID for analytics joins
-- `utm_campaign`, `utm_source`, `utm_medium`, `utm_content`
-- `headline_hash` — tie creative text to performance
-- `background_model`, `pipeline_version`, `approved_at`
-
-Pipe `utm_content` + `creative_id` into your existing stack to compare modular automation vs manual baselines. Good analytics fails when variants lack metadata, not when dashboards are missing.
-
 ## Compliance config
 
-Edit `config/brand-rules.json` to match client requirements:
+Edit `config/brand-rules.json` to adjust verification rules without code changes:
 
 ```json
 {
@@ -148,20 +192,6 @@ Edit `config/brand-rules.json` to match client requirements:
 }
 ```
 
-Re-run `npm run verify` after edits — no code changes required.
-
-## Design decisions
-
-| Choice | Rationale |
-|---|---|
-| **Staged CLI** vs one-shot | Human-in-the-loop gates for enterprise credibility; `--auto` for fast demo |
-| **OpenRouter** for all LLM calls | Single API key; text + image models via one gateway |
-| **OpenRouter Gemini** for images | No separate GCP/OpenAI setup for background generation |
-| **Sharp + SVG text** | Deterministic overlays; no hallucinated packaging |
-| **Separate background layer** | README2 pattern — planner omits product nouns from prompts |
-| **Legal verbatim from brief** | README1 pattern — compliance not LLM-generated |
-| **Local `outputs/`** | Matches successful candidates; cloud storage documented as extension |
-
 ## Cursor / agent skills
 
 `skills/` contains per-stage `SKILL.md` files for agent-native reruns in Cursor, Cowork, or Copilot.
@@ -172,13 +202,6 @@ Re-run `npm run verify` after edits — no code changes required.
 - DAM integration for asset discovery
 - RASCI approval routing to regional stakeholders
 - DCO optimizer feeding manifest performance back into copy/scene modules
-
-## Assumptions and limitations
-
-- **PoC scope** — pipeline proof, not pixel-perfect design
-- **Arabic RTL** — simplified text alignment; not full bidi layout engine
-- **API billing** — OpenRouter charges apply
-- **Assignment inputs** — brief and assets are self-authored (not supplied by Adobe)
 
 ## License
 

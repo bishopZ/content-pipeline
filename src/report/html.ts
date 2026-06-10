@@ -1,7 +1,8 @@
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { join, resolve } from 'path';
+import sharp from 'sharp';
 import { PipelineState } from '../types.js';
-import { OUTPUT_DIR } from '../utils/paths.js';
+import { OUTPUT_DIR, ROOT, fileExists } from '../utils/paths.js';
 
 export const writeManifest = async (state: PipelineState) => {
   const manifestPath = join(OUTPUT_DIR, 'campaign-manifest.json');
@@ -9,21 +10,35 @@ export const writeManifest = async (state: PipelineState) => {
   return manifestPath;
 };
 
+/** Resize a PNG to 200px wide and return as a base64 data URI. */
+const toBase64Thumbnail = async (filePath: string): Promise<string> => {
+  const absPath = resolve(ROOT, filePath);
+  if (!(await fileExists(absPath))) {
+    return '';
+  }
+  const buf = await sharp(absPath).resize({ width: 200 }).png().toBuffer();
+  return `data:image/png;base64,${buf.toString('base64')}`;
+};
+
 export const writeHtmlReport = async (state: PipelineState) => {
-  const rows = state.manifest
-    .map(
-      (entry) => `
+  const rowsHtml: string[] = [];
+  for (const entry of state.manifest) {
+    const thumb = await toBase64Thumbnail(entry.file_path);
+    const imgTag = thumb
+      ? `<img src="${thumb}" alt="${entry.creative_id}" width="120" />`
+      : `<span style="color:#999;font-size:0.75rem">(missing)</span>`;
+    rowsHtml.push(`
     <tr>
-      <td><img src="../${entry.file_path}" alt="${entry.creative_id}" width="120" /></td>
+      <td>${imgTag}</td>
       <td><code>${entry.creative_id}</code></td>
       <td>${entry.product_slug}</td>
       <td>${entry.locale}</td>
       <td>${entry.aspect_ratio}</td>
       <td><code>${entry.utm_content}</code></td>
       <td><code>${entry.headline_hash}</code></td>
-    </tr>`,
-    )
-    .join('');
+    </tr>`);
+  }
+  const rows = rowsHtml.join('');
 
   const verifyRows = state.verify_issues
     .map(
