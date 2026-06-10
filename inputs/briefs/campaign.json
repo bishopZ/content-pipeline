@@ -1,0 +1,38 @@
+{
+  "campaign_name": "Harvest Lane Summer 2026",
+  "campaign_id": "harvest_lane_summer26",
+  "message": "Fuel your summer with bold flavor and clean hydration.",
+  "target_region": "multi",
+  "target_audience": "Young urban professionals who want better-for-you snacks and drinks without sacrificing taste.",
+  "legal_disclaimer": "© 2026 Harvest Lane. Individual results may vary. See harvestlane.com/terms.",
+  "utm": {
+    "source": "meta",
+    "medium": "paid_social",
+    "campaign": "harvest_lane_summer26"
+  },
+  "brand": {
+    "name": "Harvest Lane",
+    "tone": "Warm, energetic, approachable. Emphasize natural ingredients and summer vitality.",
+    "logo_path": "inputs/assets/logo.png",
+    "badge_path": "inputs/assets/badge.png",
+    "colors": ["#2D6A4F", "#F4A261", "#E9C46A"]
+  },
+  "aspect_ratios": ["1:1", "9:16", "16:9"],
+  "locales": ["en", "fr", "zh", "ar"],
+  "products": [
+    {
+      "slug": "suncrisp-chili-mango",
+      "name": "SunCrisp Chili-Mango Chips",
+      "description": "Kettle-cooked chips with sweet mango and a slow chili kick.",
+      "features": ["Non-GMO corn", "No artificial dyes", "Summer-limited flavor"],
+      "hero_image_path": "inputs/assets/suncrisp-product.png"
+    },
+    {
+      "slug": "purepour-coconut-electrolyte",
+      "name": "PurePour Coconut Electrolyte",
+      "description": "Light coconut electrolyte drink for hot days and active commutes.",
+      "features": ["Coconut water base", "Low sugar", "Recyclable bottle"],
+      "hero_image_path": "inputs/assets/purepour-product.png"
+    }
+  ]
+}

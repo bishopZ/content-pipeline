@@ -1,0 +1,8 @@
+{
+  "prohibited_words": ["guaranteed", "miracle", "cure", "FDA-approved"],
+  "required_logo": true,
+  "brand_colors_hex": ["#2D6A4F", "#F4A261", "#E9C46A"],
+  "legal_disclaimer_required": true,
+  "max_headline_chars": 48,
+  "max_body_chars": 120
+}

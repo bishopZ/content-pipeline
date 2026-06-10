@@ -1,0 +1,8 @@
+{
+  "locales": [
+    { "code": "en", "label": "English", "rtl": false },
+    { "code": "fr", "label": "French", "rtl": false },
+    { "code": "zh", "label": "Chinese (Simplified)", "rtl": false },
+    { "code": "ar", "label": "Arabic", "rtl": true }
+  ]
+}

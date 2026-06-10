@@ -1,0 +1,41 @@
+{
+  "name": "harvest-lane-creative-pipeline",
+  "version": "1.0.0",
+  "description": "Staged creative-automation CLI for localized FMCG social ad campaigns",
+  "type": "module",
+  "bin": {
+    "harvest-lane": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "ingest": "tsx src/cli.ts ingest",
+    "copy": "tsx src/cli.ts copy",
+    "localize": "tsx src/cli.ts localize",
+    "plan": "tsx src/cli.ts plan",
+    "generate": "tsx src/cli.ts generate",
+    "composite": "tsx src/cli.ts composite",
+    "verify": "tsx src/cli.ts verify",
+    "report": "tsx src/cli.ts report",
+    "pipeline": "tsx src/cli.ts pipeline",
+    "demo": "tsx src/cli.ts pipeline --auto --dry-run --fixture",
+    "placeholders": "tsx scripts/generate-placeholders.ts",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "dotenv": "^16.4.7",
+    "listr2": "^8.2.5",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
