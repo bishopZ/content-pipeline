@@ -1,6 +1,6 @@
 # Localize ad copy
 
-Adapt English copy for FR, ZH, and AR using Claude with cultural context.
+Adapt English copy for FR, ZH, and AR using OpenRouter with cultural context.
 
 ## Command
 

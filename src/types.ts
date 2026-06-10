@@ -89,7 +89,7 @@ export type PipelineState = {
 };
 
 export const ASPECT_DIMENSIONS: Record<string, { width: number; height: number; folder: string }> = {
-  '1:1': { width: 1080, height: 1080, folder: '1_1' },
-  '9:16': { width: 1080, height: 1920, folder: '9_16' },
-  '16:9': { width: 1920, height: 1080, folder: '16_9' },
+  '1:1': { width: 1080, height: 1080, folder: '1x1' },
+  '9:16': { width: 1080, height: 1920, folder: '9x16' },
+  '16:9': { width: 1920, height: 1080, folder: '16x9' },
 };

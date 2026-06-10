@@ -1,6 +1,6 @@
 # Verify brand and legal compliance
 
-Run deterministic checks from `config/brand-rules.json` plus optional Claude brand-voice review.
+Run deterministic checks from `config/brand-rules.json` plus optional OpenRouter brand-voice review.
 
 ## Command
 

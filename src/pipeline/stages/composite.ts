@@ -33,7 +33,7 @@ export const runComposite = async () => {
         const folder = ASPECT_DIMENSIONS[ratio].folder;
         const outDir = join(OUTPUT_DIR, product.slug, localeCopy.locale, folder);
         await ensureDir(outDir);
-        const outFile = join(outDir, 'campaign.png');
+        const outFile = join(outDir, 'final.png');
 
         await compositeAd(
           {

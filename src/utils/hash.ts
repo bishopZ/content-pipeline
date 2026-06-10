@@ -9,6 +9,7 @@ export const creativeId = (
   locale: string,
   ratio: string,
 ) => {
-  const base = `${campaignId}-${productSlug}-${locale}-${ratio.replace(':', 'x')}`;
-  return `${base}-${sha256(base)}`;
+  const ratioCode = ratio.replace(':', 'x');
+  const fourCharHash = sha256(campaignId + productSlug + locale + ratio).slice(0, 4);
+  return `hl-${productSlug}-${locale}-${ratioCode}-${fourCharHash}`;
 };

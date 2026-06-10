@@ -11,7 +11,7 @@ git clone https://github.com/bishopZ/content-pipeline.git
 cd content-pipeline
 npm install
 cp .env.example .env
-# Add ANTHROPIC_API_KEY and OPENROUTER_API_KEY to .env
+# Add OPENROUTER_API_KEY to .env
 
 npm run placeholders          # create demo product/logo PNGs
 npm run pipeline -- --auto    # full run with live checklist
@@ -25,14 +25,14 @@ npm run demo                  # offline demo (no API keys): fixture copy + dry-r
 | Command | Stage | API | Approval gate |
 |---|---|---|---|
 | `npm run ingest` | Validate brief + assets | — | auto |
-| `npm run copy` | English ad copy | Claude | preview headlines |
-| `npm run localize` | FR, ZH, AR copy | Claude | spot-check samples |
-| `npm run plan` | Background art direction | Claude | review prompts |
+| `npm run copy` | English ad copy | OpenRouter | preview headlines |
+| `npm run localize` | FR, ZH, AR copy | OpenRouter | spot-check samples |
+| `npm run plan` | Background art direction | OpenRouter | review prompts |
 | `npm run generate` | Background images | OpenRouter Gemini | — |
 | `npm run composite` | Layer ads (24 files) | Sharp | auto |
-| `npm run verify` | Brand + legal checks | rules + Claude | blocks on errors |
+| `npm run verify` | Brand + legal checks | rules + OpenRouter | blocks on errors |
 | `npm run report` | Manifest + HTML | — | auto |
-| `npm run pipeline -- --auto` | All stages | both | `--auto` skips prompts |
+| `npm run pipeline -- --auto` | All stages | OpenRouter | `--auto` skips prompts |
 
 Use `--dry-run` on `generate` or `pipeline` to create placeholder backgrounds without image API spend:
 
@@ -50,36 +50,27 @@ cp .env.example .env
 
 Never commit `.env`.
 
-### 2. Anthropic (copy, localization, compliance review)
+### 2. OpenRouter (all LLM calls)
 
-1. Go to [console.anthropic.com](https://console.anthropic.com)
+1. Use your existing [OpenRouter](https://openrouter.ai) account
 2. Create an API key
 3. Add to `.env`:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
-```
-
-### 3. OpenRouter (background images)
-
-1. Use your existing [OpenRouter](https://openrouter.ai) account
-2. Add to `.env`:
-
-```
 OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_TEXT_MODEL=anthropic/claude-sonnet-4
 OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image
 ```
 
-### 4. Validate before spending
+### 3. Validate before spending
 
 ```bash
 npm run ingest
-npm run copy -- --auto    # confirms Anthropic key
+npm run copy -- --auto    # confirms OpenRouter text model
 npm run generate -- --dry-run   # confirms compositing path without image cost
 ```
 
-**Cost estimate:** ~4 background images + ~6 Claude calls per full run.
+**Cost estimate:** ~4 background images + ~10 OpenRouter text calls per full run.
 
 ## Input format
 
@@ -163,8 +154,8 @@ Re-run `npm run verify` after edits — no code changes required.
 | Choice | Rationale |
 |---|---|
 | **Staged CLI** vs one-shot | Human-in-the-loop gates for enterprise credibility; `--auto` for fast demo |
-| **Claude** for text | Bishop's existing key; strong localization |
-| **OpenRouter Gemini** for images | Existing OpenRouter key; no separate GCP/OpenAI setup |
+| **OpenRouter** for all LLM calls | Single API key; text + image models via one gateway |
+| **OpenRouter Gemini** for images | No separate GCP/OpenAI setup for background generation |
 | **Sharp + SVG text** | Deterministic overlays; no hallucinated packaging |
 | **Separate background layer** | README2 pattern — planner omits product nouns from prompts |
 | **Legal verbatim from brief** | README1 pattern — compliance not LLM-generated |
@@ -185,7 +176,7 @@ Re-run `npm run verify` after edits — no code changes required.
 
 - **PoC scope** — pipeline proof, not pixel-perfect design
 - **Arabic RTL** — simplified text alignment; not full bidi layout engine
-- **API billing** — Anthropic + OpenRouter charges apply
+- **API billing** — OpenRouter charges apply
 - **Assignment inputs** — brief and assets are self-authored (not supplied by Adobe)
 
 ## License
