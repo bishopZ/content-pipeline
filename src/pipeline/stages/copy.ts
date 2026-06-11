@@ -3,7 +3,7 @@ import { demoEnglishCopy } from '../../fixtures/demo.js';
 import { requireState, saveState } from '../state.js';
 import { promptContinue } from '../../utils/gate.js';
 
-export const runCopy = async (auto: boolean, fixture = false) => {
+export const runCopy = async (auto = false, fixture = false) => {
   const state = await requireState();
   const products = fixture
     ? demoEnglishCopy.products

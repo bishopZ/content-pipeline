@@ -1,6 +1,6 @@
 # Harvest Lane Creative Pipeline
 
-Staged creative-automation CLI for the Adobe FDE take-home exercise. Turns one FMCG JSON brief into **localized, multi-ratio social ads** with human-in-the-loop governance, configurable compliance checks, and analytics-ready campaign metadata.
+Staged creative-automation CLI. Turns one a JSON brief into **localized, multi-ratio social ads** with human-in-the-loop governance, configurable compliance checks, and analytics-ready campaign metadata.
 
 **2 products × 4 locales × 3 ratios = 24 final PNGs per run.**
 
@@ -8,7 +8,7 @@ Staged creative-automation CLI for the Adobe FDE take-home exercise. Turns one F
 
 ## 1. Setup and prerequisites
 
-**Requirements:** Node ≥ 20, npm ≥ 9, macOS or Linux (Sharp requires native binaries).
+**Requirements:** Node ≥ 20, npm ≥ 9.
 
 ```bash
 git clone https://github.com/bishopZ/content-pipeline.git
@@ -25,23 +25,18 @@ OPENROUTER_TEXT_MODEL=anthropic/claude-sonnet-4
 OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image
 ```
 
-Generate placeholder input assets (no Photoshop needed):
-
-```bash
-npm run placeholders
-```
-
 ---
 
 ## 2. Dry-run instructions
 
-Run the full pipeline offline — no API keys required:
+Run the full pipeline offline with no API keys.
 
 ```bash
 npm run demo
 ```
 
 This runs `pipeline --auto --dry-run --fixture`, which:
+
 - Loads copy and background plans from fixture data (no OpenRouter calls)
 - Skips image generation and copies placeholder PNGs from `inputs/fixtures/`
 - Composites all 24 final PNGs via Sharp
@@ -74,29 +69,31 @@ npm run report
 
 All campaign configuration lives in `inputs/briefs/campaign.json`. See `inputs/briefs/campaign.example.json` for a copy template.
 
-| Field | Type | Description |
-|---|---|---|
-| `campaign_name` | string | Human-readable campaign label (appears in HTML report title) |
-| `campaign_id` | string | Machine-readable ID used in UTM and `creative_id` fields |
-| `message` | string | Core campaign message; given to LLM as brand direction |
-| `target_region` | string | Geographic scope (e.g. `"multi"`, `"US"`) |
-| `target_audience` | string | Audience description used in copy prompts |
-| `legal_disclaimer` | string | Rendered verbatim on every composite — never LLM-generated (ADR-GAI-03) |
-| `utm.source` | string | UTM source tag (e.g. `"meta"`) |
-| `utm.medium` | string | UTM medium tag (e.g. `"paid_social"`) |
-| `utm.campaign` | string | UTM campaign tag — usually matches `campaign_id` |
-| `brand.name` | string | Brand name used in copy prompts |
-| `brand.tone` | string | Tone instruction for LLM copy generation |
-| `brand.logo_path` | string | Relative path to logo PNG (`inputs/assets/logo.png`) |
-| `brand.badge_path` | string | Optional promo badge PNG overlaid top-right |
-| `brand.colors` | string[] | Hex palette used in brand-rules verification |
-| `aspect_ratios` | string[] | Subset of `["1:1", "9:16", "16:9"]` — one composite per ratio per locale per product |
-| `locales` | string[] | Subset of `["en", "fr", "zh", "ar"]` — Stage 3 generates copy for non-EN locales |
-| `products[].slug` | string | URL-safe slug; used in file paths and `creative_id` |
-| `products[].name` | string | Product display name passed to LLM copy prompts |
-| `products[].description` | string | Product description for copy context |
-| `products[].features` | string[] | Feature bullets passed to copy prompts |
-| `products[].hero_image_path` | string | Optional path to product PNG (`inputs/assets/[slug]-product.png`) |
+
+| Field                        | Type     | Description                                                                          |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `campaign_name`              | string   | Human-readable campaign label (appears in HTML report title)                         |
+| `campaign_id`                | string   | Machine-readable ID used in UTM and `creative_id` fields                             |
+| `message`                    | string   | Core campaign message; given to LLM as brand direction                               |
+| `target_region`              | string   | Geographic scope (e.g. `"multi"`, `"US"`)                                            |
+| `target_audience`            | string   | Audience description used in copy prompts                                            |
+| `legal_disclaimer`           | string   | Rendered verbatim on every composite — never LLM-generated (ADR-GAI-03)              |
+| `utm.source`                 | string   | UTM source tag (e.g. `"meta"`)                                                       |
+| `utm.medium`                 | string   | UTM medium tag (e.g. `"paid_social"`)                                                |
+| `utm.campaign`               | string   | UTM campaign tag — usually matches `campaign_id`                                     |
+| `brand.name`                 | string   | Brand name used in copy prompts                                                      |
+| `brand.tone`                 | string   | Tone instruction for LLM copy generation                                             |
+| `brand.logo_path`            | string   | Relative path to logo PNG (`inputs/assets/logo.png`)                                 |
+| `brand.badge_path`           | string   | Optional promo badge PNG overlaid top-right                                          |
+| `brand.colors`               | string[] | Hex palette used in brand-rules verification                                         |
+| `aspect_ratios`              | string[] | Subset of `["1:1", "9:16", "16:9"]` — one composite per ratio per locale per product |
+| `locales`                    | string[] | Subset of `["en", "fr", "zh", "ar"]` — Stage 3 generates copy for non-EN locales     |
+| `products[].slug`            | string   | URL-safe slug; used in file paths and `creative_id`                                  |
+| `products[].name`            | string   | Product display name passed to LLM copy prompts                                      |
+| `products[].description`     | string   | Product description for copy context                                                 |
+| `products[].features`        | string[] | Feature bullets passed to copy prompts                                               |
+| `products[].hero_image_path` | string   | Optional path to product PNG (`inputs/assets/[slug]-product.png`)                    |
+
 
 ---
 
@@ -128,31 +125,15 @@ Writes two output files: `outputs/campaign-manifest.json` (24 rows, one per fina
 
 ---
 
-## 5. ADRs index
+## 5. Known limitations
 
-| ID | Decision | One-line rationale |
-|---|---|---|
-| ADR-GAI-01 | TypeScript over Python | Bishop's portfolio is TypeScript-first; live walkthrough is stronger in the candidate's primary language; Sharp provides production-grade compositing |
-| ADR-GAI-02 | OpenRouter for all LLM calls | Single API key for both text and image generation; unified gateway eliminates per-provider account setup for reviewers |
-| ADR-GAI-03 | Legal disclaimer never LLM-generated | `legal_disclaimer` is rendered verbatim from the brief; LLM paraphrase introduces compliance liability |
-| ADR-GAI-04 | Inter-stage state via `outputs/.state.json` | Enables single-stage restarts without rerunning earlier work; state is inspectable during a live code walkthrough |
-| ADR-GAI-05 | AR locale uses simplified RTL layout | Sharp SVG renderer requires complex bidi handling for full RTL; PoC scope accepts LTR layout for AR with documented limitation |
-| ADR-GAI-06 | Output paths use `1x1/9x16/16x9` and `final.png` | PRD AC-08 specifies `1x1` ratio folders and `final.png` filenames; original scaffold used `1_1` and `campaign.png` |
-| ADR-GAI-07 | Noto Sans CJK SC font bundled in `assets/fonts/` | Sharp SVG renderer (librsvg) requires a `file://` `@font-face` rule in the SVG `<defs>` to render ZH glyphs; system fonts do not include CJK coverage |
-| ADR-GAI-08 | HTML report embeds base64 thumbnails | Self-contained HTML opens without a web server; relative `../outputs/` paths break when the report is moved or shared |
-| ADR-GAI-09 | `creative_id` format: `hl-[slug]-[locale]-[ratio]-[4char]` | Stable, human-readable IDs for analytics joins; 4-char SHA-256 suffix is deterministic per campaign+product+locale+ratio |
-
----
-
-## 6. Known limitations
-
-- **Arabic RTL layout** — AR locale composites render text left-to-right. Sharp's SVG renderer does not support full bidirectional text. Native Arabic readers will see incorrect layout (ADR-GAI-05).
-- **CJK font bundled as OTF** — `assets/fonts/NotoSansCJKsc-Regular.otf` is committed to the repo (15.6 MB). This keeps setup zero-config but increases clone size. A production build would load the font from a CDN or system path.
-- **No production DAM integration** — `inputs/assets/` is a local folder. S3, Azure Blob, Dropbox, and Workfront integrations are out of PoC scope.
-- **Placeholder API keys produce errors, not silent empty output** — Running `npm run pipeline` without a real `OPENROUTER_API_KEY` throws an HTTP 401 from Stage 2 onward. Use `npm run demo` for zero-key offline runs.
-- **No production test suite** — `tsc --noEmit` enforces type correctness. There are no unit tests for individual stage logic; manual verification steps are in the build log.
-- **PoC pixel fidelity** — Compositing layers are functional but not pixel-perfect ad design. Layouts are not optimized for each ratio's platform-specific safe zone guidelines.
-- **`--seed` flag not implemented** — `creative_id` hashes are deterministic per campaign+product+locale+ratio, but image generation does not pass a seed to the image model; repeated live runs may produce different backgrounds.
+- **Arabic RTL layout** - AR locale composites render text left-to-right. Sharp's SVG renderer does not support full bidirectional text. Native Arabic readers will see incorrect layout (ADR-GAI-05).
+- **CJK font bundled as OTF** - `assets/fonts/NotoSansCJKsc-Regular.otf` is committed to the repo (15.6 MB). This keeps setup zero-config but increases clone size. A production build would load the font from a CDN or system path.
+- **No production DAM integration** - `inputs/assets/` is a local folder. S3, Azure Blob, Dropbox, and Workfront integrations are out of PoC scope.
+- **Placeholder API keys produce errors, not silent empty output** - Running `npm run pipeline` without a real `OPENROUTER_API_KEY` throws an HTTP 401 from Stage 2 onward. Use `npm run demo` for zero-key offline runs.
+- **No production test suite** - `tsc --noEmit` enforces type correctness. There are no unit tests for individual stage logic; manual verification steps are in the build log.
+- **PoC pixel fidelity** - Compositing layers are functional but not pixel-perfect ad design. Layouts are not optimized for each ratio's platform-specific safe zone guidelines.
+- `**--seed` flag not implemented** - `creative_id` hashes are deterministic per campaign+product+locale+ratio, but image generation does not pass a seed to the image model; repeated live runs may produce different backgrounds.
 
 ---
 
@@ -195,13 +176,6 @@ Edit `config/brand-rules.json` to adjust verification rules without code changes
 ## Cursor / agent skills
 
 `skills/` contains per-stage `SKILL.md` files for agent-native reruns in Cursor, Cowork, or Copilot.
-
-## Production extensions (out of PoC scope)
-
-- Swap `outputs/` for S3, Azure Blob, or Dropbox SDK
-- DAM integration for asset discovery
-- RASCI approval routing to regional stakeholders
-- DCO optimizer feeding manifest performance back into copy/scene modules
 
 ## License
 

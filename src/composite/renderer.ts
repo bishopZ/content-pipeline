@@ -1,7 +1,7 @@
 import sharp from 'sharp';
-import { readFile } from 'fs/promises';
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { ASPECT_DIMENSIONS } from '../types.js';
+import { bodyUsesTwoLines, splitBodyIntoTwoLines } from './text-layout.js';
 import { loadLocalesConfig } from '../utils/prompt.js';
 import { ROOT } from '../utils/paths.js';
 
@@ -27,6 +27,31 @@ const escapeXml = (value: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const BODY_FONT_SIZE = 26;
+const BODY_LINE_HEIGHT = 32;
+
+const renderBodyMarkup = (
+  body: string,
+  bodyX: number,
+  bodyY: number,
+  accent: string,
+  anchor: string,
+  aspectRatio: string,
+): string => {
+  const fontFamily = "'Noto Sans CJK SC', Arial, Helvetica, sans-serif";
+  const textAttrs = `fill="${accent}" font-size="${BODY_FONT_SIZE}" font-family="${fontFamily}" text-anchor="${anchor}"`;
+
+  if (!bodyUsesTwoLines(aspectRatio)) {
+    return `<text x="${bodyX}" y="${bodyY}" ${textAttrs}>${escapeXml(body)}</text>`;
+  }
+
+  const [line1, line2] = splitBodyIntoTwoLines(body);
+  return `<text x="${bodyX}" y="${bodyY}" ${textAttrs}>
+    <tspan x="${bodyX}" dy="0">${escapeXml(line1)}</tspan>
+    <tspan x="${bodyX}" dy="${BODY_LINE_HEIGHT}">${escapeXml(line2)}</tspan>
+  </text>`;
+};
+
 const textOverlaySvg = (
   width: number,
   height: number,
@@ -35,11 +60,13 @@ const textOverlaySvg = (
   legal: string,
   rtl: boolean,
   accent: string,
+  aspectRatio: string,
 ) => {
   const anchor = rtl ? 'end' : 'start';
   const headlineX = rtl ? width - 48 : 48;
   const bodyX = rtl ? width - 48 : 48;
   const legalX = rtl ? width - 48 : 48;
+  const bodyY = height - 160;
 
   const fontFaceUrl = `file://${CJK_FONT_PATH}`;
   return Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -60,7 +87,7 @@ const textOverlaySvg = (
   </defs>
   <rect width="${width}" height="${height}" fill="url(#fade)"/>
   <text x="${headlineX}" y="${height - 220}" fill="#ffffff" font-size="42" font-weight="700" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(headline)}</text>
-  <text x="${bodyX}" y="${height - 160}" fill="${accent}" font-size="26" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(body)}</text>
+  ${renderBodyMarkup(body, bodyX, bodyY, accent, anchor, aspectRatio)}
   <text x="${legalX}" y="${height - 48}" fill="#dddddd" font-size="14" font-family="'Noto Sans CJK SC', Arial, Helvetica, sans-serif" text-anchor="${anchor}">${escapeXml(legal)}</text>
 </svg>`);
 };
@@ -117,6 +144,7 @@ export const compositeAd = async (input: CompositeInput, outputPath: string) => 
         input.legal,
         rtl,
         accent,
+        input.aspectRatio,
       ),
       top: 0,
       left: 0,
