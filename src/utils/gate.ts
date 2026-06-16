@@ -12,7 +12,7 @@ export const promptContinue = async (message: string, auto: boolean) => {
   });
 
   const answer = await new Promise<string>((resolve) => {
-    rl.question(`${message} [Y/n] `, resolve);
+    rl.question(`\n${message} [Y/n] `, resolve);
   });
   rl.close();
 

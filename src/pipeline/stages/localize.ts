@@ -25,6 +25,7 @@ export const runLocalize = async (auto: boolean, fixture = false) => {
   for (const code of targets) {
     const meta = locales.find((l) => l.code === code);
     const label = meta?.label ?? code;
+    console.log(`  Calling OpenRouter for ${code} (${label})...`);
     const products = await localizeCopy(state.brief, english.products, code, label);
     console.log(`  • ${code}: ${products.map((p) => p.headline).join(' | ')}`);
 

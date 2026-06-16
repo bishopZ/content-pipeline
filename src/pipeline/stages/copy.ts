@@ -5,6 +5,9 @@ import { promptContinue } from '../../utils/gate.js';
 
 export const runCopy = async (auto = false, fixture = false) => {
   const state = await requireState();
+  if (!fixture) {
+    console.log('  Calling OpenRouter for English copy...');
+  }
   const products = fixture
     ? demoEnglishCopy.products
     : await generateEnglishCopy(state.brief);

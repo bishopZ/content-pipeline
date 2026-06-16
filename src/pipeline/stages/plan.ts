@@ -5,6 +5,9 @@ import { promptContinue } from '../../utils/gate.js';
 
 export const runPlan = async (auto: boolean, fixture = false) => {
   const state = await requireState();
+  if (!fixture) {
+    console.log('  Calling OpenRouter for background art direction...');
+  }
   const plans = fixture ? demoBackgroundPlans : await planBackgrounds(state.brief);
 
   for (const plan of plans) {

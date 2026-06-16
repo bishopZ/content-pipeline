@@ -105,47 +105,57 @@ program
 
     console.log(chalk.bold.cyan('\nHarvest Lane Creative Pipeline\n'));
 
-    const tasks = new Listr(
-      [
-        {
-          title: 'Validating campaign brief & resolving assets',
-          task: () => runIngest(opts.brief),
-        },
-        {
-          title: fixture ? 'Loading fixture English copy' : 'Writing English ad copy (OpenRouter)',
-          task: () => runCopy(auto, fixture),
-        },
-        {
-          title: fixture ? 'Loading fixture localized copy' : 'Localizing copy (OpenRouter)',
-          task: () => runLocalize(auto, fixture),
-        },
-        {
-          title: fixture ? 'Loading fixture background plans' : 'Art-directing background scenes (OpenRouter)',
-          task: () => runPlan(auto, fixture),
-        },
-        {
-          title: dryRun
-            ? 'Generating placeholder backgrounds (dry-run)'
-            : 'Generating backgrounds (OpenRouter Gemini)',
-          task: () => runGenerate(dryRun),
-        },
-        {
-          title: 'Compositing final ads (background + product + text + logo)',
-          task: () => runComposite(),
-        },
-        {
-          title: 'Running brand & legal compliance checks',
-          task: () => runVerify(),
-        },
-        {
-          title: 'Building campaign manifest & HTML report',
-          task: () => runReport(),
-        },
-      ],
-      { concurrent: false },
-    );
+    const stages = [
+      {
+        title: 'Validating campaign brief & resolving assets',
+        run: () => runIngest(opts.brief),
+      },
+      {
+        title: fixture ? 'Loading fixture English copy' : 'Writing English ad copy (OpenRouter)',
+        run: () => runCopy(auto, fixture),
+      },
+      {
+        title: fixture ? 'Loading fixture localized copy' : 'Localizing copy (OpenRouter)',
+        run: () => runLocalize(auto, fixture),
+      },
+      {
+        title: fixture ? 'Loading fixture background plans' : 'Art-directing background scenes (OpenRouter)',
+        run: () => runPlan(auto, fixture),
+      },
+      {
+        title: dryRun
+          ? 'Generating placeholder backgrounds (dry-run)'
+          : 'Generating backgrounds (OpenRouter Gemini)',
+        run: () => runGenerate(dryRun),
+      },
+      {
+        title: 'Compositing final ads (background + product + text + logo)',
+        run: () => runComposite(),
+      },
+      {
+        title: 'Running brand & legal compliance checks',
+        run: () => runVerify(),
+      },
+      {
+        title: 'Building campaign manifest & HTML report',
+        run: () => runReport(),
+      },
+    ];
 
-    await tasks.run();
+    if (auto) {
+      const tasks = new Listr(
+        stages.map((stage) => ({ title: stage.title, task: stage.run })),
+        { concurrent: false },
+      );
+      await tasks.run();
+    } else {
+      for (const stage of stages) {
+        console.log(chalk.bold.green(`\n▸ ${stage.title}`));
+        await stage.run();
+        console.log(chalk.green('✓ Done'));
+      }
+    }
+
     console.log(chalk.bold.green('\n✓ Pipeline complete — see outputs/\n'));
   });
 
